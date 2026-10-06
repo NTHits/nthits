@@ -3,57 +3,424 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>NT_Hits</title>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 900px;
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0f0f12;
+            color: #f5f5f5;
+        }
+
+        .container {
+            width: min(1100px, calc(100% - 40px));
             margin: 0 auto;
-            padding: 60px 20px;
-            line-height: 1.6;
-            color: #222;
         }
 
-        h1 {
-            color: #111;
-            margin-bottom: 10px;
+        header {
+            padding: 28px 0;
+            border-bottom: 1px solid #29292f;
         }
 
-        p {
-            margin-bottom: 25px;
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
         }
 
-        .links {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
+        nav {
+            margin-top: 12px;
         }
 
-        .links a {
-            color: #0066cc;
+        nav a {
+            color: #aaa;
+            margin-right: 20px;
             text-decoration: none;
         }
 
-        .links a:hover {
-            text-decoration: underline;
+        nav a:hover {
+            color: white;
+        }
+
+        .hero {
+            padding: 80px 0 50px;
+            max-width: 800px;
+        }
+
+        .hero h1 {
+            font-size: clamp(42px, 7vw, 72px);
+            margin: 0 0 20px;
+        }
+
+        .hero p {
+            color: #b8b8c0;
+            font-size: 19px;
+            line-height: 1.7;
+        }
+
+        .button {
+            display: inline-block;
+            margin-top: 25px;
+            padding: 15px 24px;
+            background: white;
+            color: #111;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background: #ddd;
+        }
+
+        .dashboard {
+            margin: 30px 0 80px;
+            padding: 30px;
+            border: 1px solid #29292f;
+            border-radius: 14px;
+            background: #17171b;
+        }
+
+        .dashboard h2 {
+            margin-top: 0;
+        }
+
+        .account {
+            padding: 18px;
+            border: 1px solid #303038;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .account-name {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .muted {
+            color: #999;
+        }
+
+        .video-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 25px;
+        }
+
+        .preview {
+            min-height: 350px;
+            border: 1px dashed #444;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .settings {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        label {
+            color: #bbb;
+            font-size: 14px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 13px;
+            margin-top: 6px;
+            border-radius: 7px;
+            border: 1px solid #333;
+            background: #101014;
+            color: white;
+            font-size: 15px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #ccc;
+        }
+
+        .check input {
+            width: auto;
+            margin: 0;
+        }
+
+        .notice {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #202025;
+            color: #aaa;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        footer {
+            border-top: 1px solid #29292f;
+            padding: 30px 0 50px;
+            color: #888;
+        }
+
+        footer a {
+            color: #aaa;
+            margin-right: 20px;
+        }
+
+        @media (max-width: 750px) {
+            .video-area {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <h1>NT_Hits</h1>
+<header>
+    <div class="container">
+        <div class="logo">NT_Hits</div>
 
-    <p>
-        Official website of NT_Hits, a tool for creating and publishing
-        original short-form music videos.
-    </p>
-
-    <div class="links">
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
+        <nav>
+            <a href="#dashboard">Dashboard</a>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+        </nav>
     </div>
+</header>
+
+
+<main class="container">
+
+    <section class="hero">
+
+        <h1>Create. Review. Publish.</h1>
+
+        <p>
+            NT_Hits helps creators organize, generate and publish
+            original short-form music videos to TikTok.
+        </p>
+
+        <button
+            class="button"
+            id="connectButton"
+            type="button">
+            Connect TikTok
+        </button>
+
+    </section>
+
+
+    <section
+        class="dashboard"
+        id="dashboard">
+
+        <h2>Creator Dashboard</h2>
+
+        <div class="account">
+
+            <div class="account-name">
+                TikTok account
+            </div>
+
+            <div class="muted">
+                Connect your TikTok account to continue.
+            </div>
+
+        </div>
+
+
+        <div class="video-area">
+
+            <div class="preview">
+
+                <div>
+
+                    <strong>Video Preview</strong>
+
+                    <p class="muted">
+                        Your selected video will appear here
+                        before publishing.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="settings">
+
+                <label>
+                    Title
+
+                    <textarea
+                        id="title"
+                        placeholder="Write your caption..."></textarea>
+
+                </label>
+
+
+                <label>
+                    Privacy
+
+                    <select id="privacy">
+
+                        <option value="" selected disabled>
+                            Select privacy
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+                <label class="check">
+
+                    <input
+                        type="checkbox"
+                        id="comment">
+
+                    Allow comments
+
+                </label>
+
+
+                <label class="check">
+
+                    <input
+                        type="checkbox"
+                        id="duet">
+
+                    Allow Duet
+
+                </label>
+
+
+                <label class="check">
+
+                    <input
+                        type="checkbox"
+                        id="stitch">
+
+                    Allow Stitch
+
+                </label>
+
+
+                <div class="notice">
+
+                    By posting, you agree to TikTok's
+                    Music Usage Confirmation.
+
+                </div>
+
+
+                <button
+                    class="button"
+                    id="publishButton"
+                    type="button">
+
+                    Publish to TikTok
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer>
+
+    <div class="container">
+
+        <div>
+            NT_Hits
+        </div>
+
+        <br>
+
+        <a href="privacy.html">
+            Privacy Policy
+        </a>
+
+        <a href="terms.html">
+            Terms of Service
+        </a>
+
+    </div>
+
+</footer>
+
+
+<script>
+
+    const connectButton =
+        document.getElementById("connectButton");
+
+    const publishButton =
+        document.getElementById("publishButton");
+
+    const privacy =
+        document.getElementById("privacy");
+
+
+    /*
+     * Temporary interface behavior.
+     *
+     * The real TikTok OAuth connection will be
+     * connected to the backend later.
+     */
+
+    connectButton.addEventListener(
+        "click",
+        function () {
+
+            alert(
+                "TikTok connection will be enabled here."
+            );
+
+        }
+    );
+
+
+    publishButton.addEventListener(
+        "click",
+        function () {
+
+            alert(
+                "Publishing will only start after explicit user consent."
+            );
+
+        }
+    );
+
+</script>
 
 </body>
 </html>
