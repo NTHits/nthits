@@ -395,6 +395,15 @@
     const accountStatus =
         document.getElementById("tiktok-account-status");
 
+    const comments =
+        document.getElementById("comment");
+
+    const duet =
+        document.getElementById("duet");
+
+    const stitch =
+        document.getElementById("stitch");
+
 
     async function checkTikTokConnection() {
 
@@ -417,7 +426,10 @@
                     data.creator_nickname;
 
                 accountStatus.textContent =
-                    "@" + data.creator_username + " • TikTok connected";
+                    "@" + data.creator_username +
+                    " • TikTok connected";
+
+                await loadCreatorInfo();
 
             } else {
 
@@ -438,6 +450,110 @@
                 "Unable to check TikTok connection.";
 
             console.error(error);
+
+        }
+
+    }
+
+
+    async function loadCreatorInfo() {
+
+        try {
+
+            const response = await fetch(
+                "https://nthits-api.onrender.com/creator-info"
+            );
+
+            if (!response.ok) {
+                throw new Error("Creator Info request failed");
+            }
+
+            const data = await response.json();
+
+
+            privacy.innerHTML = "";
+
+
+            data.privacy_level_options.forEach(
+                function (option) {
+
+                    const optionElement =
+                        document.createElement("option");
+
+                    optionElement.value =
+                        option;
+
+                    if (option === "PUBLIC_TO_EVERYONE") {
+                        optionElement.textContent =
+                            "Public";
+                    }
+
+                    else if (
+                        option === "MUTUAL_FOLLOW_FRIENDS"
+                    ) {
+                        optionElement.textContent =
+                            "Friends";
+                    }
+
+                    else if (option === "SELF_ONLY") {
+                        optionElement.textContent =
+                            "Only me";
+                    }
+
+                    else {
+                        optionElement.textContent =
+                            option;
+                    }
+
+                    privacy.appendChild(
+                        optionElement
+                    );
+
+                }
+            );
+
+
+            if (data.comment_disabled) {
+
+                comments.checked = false;
+                comments.disabled = true;
+
+            } else {
+
+                comments.disabled = false;
+
+            }
+
+
+            if (data.duet_disabled) {
+
+                duet.checked = false;
+                duet.disabled = true;
+
+            } else {
+
+                duet.disabled = false;
+
+            }
+
+
+            if (data.stitch_disabled) {
+
+                stitch.checked = false;
+                stitch.disabled = true;
+
+            } else {
+
+                stitch.disabled = false;
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Unable to load Creator Info:",
+                error
+            );
 
         }
 
