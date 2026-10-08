@@ -572,8 +572,16 @@
             const creator =
                 data.data || data;
 
-            const options =
-                creator.privacy_level_options || [];
+            let options =
+                Array.isArray(creator.privacy_level_options)
+                    ? [...creator.privacy_level_options]
+                    : [];
+
+            // SELF_ONLY is supported by TikTok for the connected private
+            // account. Keep it available even if an older API response omits it.
+            if (!options.includes("SELF_ONLY")) {
+                options.push("SELF_ONLY");
+            }
 
             privacy.innerHTML = "";
 
