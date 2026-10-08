@@ -683,145 +683,146 @@
 
 
     async function loadCreatorInfo() {
-
+    
         try {
-
+    
             const response = await fetch(
-                API_BASE + "/creator-info"
+                API_BASE + "/status"
             );
-
+    
             if (!response.ok) {
                 throw new Error(
-                    "Creator Info request failed"
+                    "Status request failed"
                 );
             }
-
-            const data =
-                await response.json();
-
+    
             const creator =
-                data.data || data;
-
+                await response.json();
+    
             const options =
                 creator.privacy_level_options || [];
-
+    
             privacy.innerHTML = "";
-
+    
             const placeholder =
                 document.createElement("option");
-
+    
             placeholder.value = "";
             placeholder.textContent =
                 "Select privacy";
             placeholder.disabled = true;
             placeholder.selected = true;
-
+    
             privacy.appendChild(
                 placeholder
             );
-
+    
+    
             options.forEach(
                 function (option) {
-
+    
                     const optionElement =
                         document.createElement("option");
-
+    
                     optionElement.value =
                         option;
-
+    
+    
                     if (
                         option ===
                         "PUBLIC_TO_EVERYONE"
                     ) {
-
+    
                         optionElement.textContent =
                             "Public";
-
+    
                     } else if (
                         option ===
                         "MUTUAL_FOLLOW_FRIENDS"
                     ) {
-
+    
                         optionElement.textContent =
                             "Friends";
-
+    
                     } else if (
                         option ===
                         "FOLLOWER_OF_CREATOR"
                     ) {
-
+    
                         optionElement.textContent =
                             "Followers";
-
+    
                     } else if (
                         option ===
                         "SELF_ONLY"
                     ) {
-
+    
                         optionElement.textContent =
                             "Only me";
-
+    
                     } else {
-
+    
                         optionElement.textContent =
                             option;
-
+    
                     }
-
+    
+    
                     privacy.appendChild(
                         optionElement
                     );
-
+    
                 }
             );
-
-
+    
+    
             if (creator.comment_disabled) {
-
+    
                 comments.checked = false;
                 comments.disabled = true;
-
+    
             } else {
-
+    
                 comments.disabled = false;
-
+    
             }
-
-
+    
+    
             if (creator.duet_disabled) {
-
+    
                 duet.checked = false;
                 duet.disabled = true;
-
+    
             } else {
-
+    
                 duet.disabled = false;
-
+    
             }
-
-
+    
+    
             if (creator.stitch_disabled) {
-
+    
                 stitch.checked = false;
                 stitch.disabled = true;
-
+    
             } else {
-
+    
                 stitch.disabled = false;
-
+    
             }
-
+    
+    
             updatePublishButton();
-
+    
         } catch (error) {
-
+    
             console.error(
                 "Unable to load Creator Info:",
                 error
             );
-
+    
         }
-
+    
     }
 
 
