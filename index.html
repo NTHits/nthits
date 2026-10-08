@@ -652,187 +652,56 @@
     }
 
 
-    async function loadCreatorInfo() {
 
-        try {
+async function loadCreatorInfo() {
+    const privacySelect = document.getElementById("privacyLevel");
 
-            const response =
-                await fetch(
-                    API_BASE + "/creator-info"
-                );
+    try {
+        const response = await fetch(`${API_BASE}/status`, {
+            method: "GET",
+            cache: "no-store"
+        });
 
-            if (!response.ok) {
+        const result = await response.json();
 
-                throw new Error(
-                    "Creator Info request failed"
-                );
-
-            }
-
-            const result =
-                await response.json();
-
-            const creator =
-                result.data ||
-                result;
-
-            const options =
-                creator.privacy_level_options ||
-                [];
-
-
-            privacy.innerHTML = "";
-
-
-            const placeholder =
-                document.createElement(
-                    "option"
-                );
-
-            placeholder.value = "";
-
-            placeholder.textContent =
-                "Select privacy";
-
-            placeholder.disabled =
-                true;
-
-            placeholder.selected =
-                true;
-
-
-            privacy.appendChild(
-                placeholder
+        if (!response.ok || !result.connected) {
+            throw new Error(
+                result.error || "Não foi possível consultar a conta TikTok."
             );
-
-
-            options.forEach(
-                function (option) {
-
-                    const optionElement =
-                        document.createElement(
-                            "option"
-                        );
-
-                    optionElement.value =
-                        option;
-
-
-                    if (
-                        option ===
-                        "PUBLIC_TO_EVERYONE"
-                    ) {
-
-                        optionElement.textContent =
-                            "Public";
-
-                    } else if (
-                        option ===
-                        "MUTUAL_FOLLOW_FRIENDS"
-                    ) {
-
-                        optionElement.textContent =
-                            "Friends";
-
-                    } else if (
-                        option ===
-                        "FOLLOWER_OF_CREATOR"
-                    ) {
-
-                        optionElement.textContent =
-                            "Followers";
-
-                    } else if (
-                        option ===
-                        "SELF_ONLY"
-                    ) {
-
-                        optionElement.textContent =
-                            "Only me";
-
-                    } else {
-
-                        optionElement.textContent =
-                            option;
-
-                    }
-
-
-                    privacy.appendChild(
-                        optionElement
-                    );
-
-                }
-            );
-
-
-            if (
-                creator.comment_disabled
-            ) {
-
-                comments.checked =
-                    false;
-
-                comments.disabled =
-                    true;
-
-            } else {
-
-                comments.disabled =
-                    false;
-
-            }
-
-
-            if (
-                creator.duet_disabled
-            ) {
-
-                duet.checked =
-                    false;
-
-                duet.disabled =
-                    true;
-
-            } else {
-
-                duet.disabled =
-                    false;
-
-            }
-
-
-            if (
-                creator.stitch_disabled
-            ) {
-
-                stitch.checked =
-                    false;
-
-                stitch.disabled =
-                    true;
-
-            } else {
-
-                stitch.disabled =
-                    false;
-
-            }
-
-
-            updatePublishButton();
-
-
-        } catch (error) {
-
-            console.error(
-                "Unable to load Creator Info:",
-                error
-            );
-
         }
 
+        const options = result.privacy_level_options || [];
+
+        const labels = {
+            PUBLIC_TO_EVERYONE: "Everyone",
+            MUTUAL_FOLLOW_FRIENDS: "Friends",
+            SELF_ONLY: "Only me"
+        };
+
+        privacySelect.innerHTML = "";
+
+        options.forEach((value) => {
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent = labels[value] || value;
+            privacySelect.appendChild(option);
+        });
+
+        if (options.includes("SELF_ONLY")) {
+            privacySelect.value = "SELF_ONLY";
+        }
+
+        if (options.length === 0) {
+            privacySelect.innerHTML =
+                '<option value="">Nenhuma opção de privacidade disponível</option>';
+        }
+    } catch (error) {
+        console.error("Erro ao carregar privacidade:", error);
+
+        privacySelect.innerHTML =
+            '<option value="">Erro ao carregar opções de privacidade</option>';
     }
+}
 
 
     async function pollPublishStatus(
