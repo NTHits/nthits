@@ -125,6 +125,40 @@
             color: #888;
             text-align: center;
             padding: 20px;
+            overflow: hidden;
+        }
+
+        .preview video {
+            width: 100%;
+            max-height: 520px;
+            border-radius: 8px;
+            display: block;
+            background: #000;
+        }
+
+        .file-input {
+            margin-bottom: 5px;
+        }
+
+        .status-message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #202025;
+            color: #aaa;
+            line-height: 1.5;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status-message.success {
+            display: block;
+            color: #b8f5c0;
+        }
+
+        .status-message.error {
+            display: block;
+            color: #ffaaaa;
         }
 
         .settings {
@@ -254,15 +288,14 @@
 
         <div class="video-area">
 
-            <div class="preview">
+            <div class="preview" id="videoPreview">
 
                 <div>
 
                     <strong>Video Preview</strong>
 
                     <p class="muted">
-                        Your selected video will appear here
-                        before publishing.
+                        Select an MP4 video to preview it before publishing.
                     </p>
 
                 </div>
@@ -271,6 +304,17 @@
 
 
             <div class="settings">
+
+                <label>
+                    Video
+
+                    <input
+                        class="file-input"
+                        type="file"
+                        id="videoFile"
+                        accept="video/mp4,.mp4">
+
+                </label>
 
                 <label>
                     Title
@@ -340,11 +384,18 @@
                 <button
                     class="button"
                     id="publishButton"
-                    type="button">
+                    type="button"
+                    disabled>
 
                     Publish to TikTok
 
                 </button>
+
+                <div
+                    class="status-message"
+                    id="publishStatus"
+                    aria-live="polite">
+                </div>
 
             </div>
 
@@ -380,6 +431,9 @@
 
 <script>
 
+    const API_BASE =
+        "https://nthits-api.onrender.com";
+
     const connectButton =
         document.getElementById("connectButton");
 
@@ -404,29 +458,71 @@
     const stitch =
         document.getElementById("stitch");
 
+    const videoFile =
+        document.getElementById("videoFile");
+
+    const videoPreview =
+        document.getElementById("videoPreview");
+
+    const publishStatus =
+        document.getElementById("publishStatus");
+
+    let selectedVideo = null;
+
+
+    function showPublishStatus(message, type) {
+
+        publishStatus.textContent = message;
+        publishStatus.className =
+            "status-message " + type;
+
+    }
+
+
+    function resetPublishStatus() {
+
+        publishStatus.textContent = "";
+        publishStatus.className =
+            "status-message";
+
+    }
+
+
+    function updatePublishButton() {
+
+        publishButton.disabled =
+            !selectedVideo ||
+            !privacy.value;
+
+    }
+
 
     async function checkTikTokConnection() {
 
         try {
 
             const response = await fetch(
-                "https://nthits-api.onrender.com/status"
+                API_BASE + "/status"
             );
 
             if (!response.ok) {
-                throw new Error("Status request failed");
+                throw new Error(
+                    "Status request failed"
+                );
             }
 
-            const data = await response.json();
-
+            const data =
+                await response.json();
 
             if (data.connected) {
 
                 accountName.textContent =
-                    data.creator_nickname;
+                    data.creator_nickname ||
+                    "TikTok account";
 
                 accountStatus.textContent =
-                    "@" + data.creator_username +
+                    "@" +
+                    data.creator_username +
                     " • TikTok connected";
 
                 await loadCreatorInfo();
@@ -461,20 +557,40 @@
         try {
 
             const response = await fetch(
-                "https://nthits-api.onrender.com/creator-info"
+                API_BASE + "/creator-info"
             );
 
             if (!response.ok) {
-                throw new Error("Creator Info request failed");
+                throw new Error(
+                    "Creator Info request failed"
+                );
             }
 
-            const data = await response.json();
+            const data =
+                await response.json();
 
+            const creator =
+                data.data || data;
+
+            const options =
+                creator.privacy_level_options || [];
 
             privacy.innerHTML = "";
 
+            const placeholder =
+                document.createElement("option");
 
-            data.privacy_level_options.forEach(
+            placeholder.value = "";
+            placeholder.textContent =
+                "Select privacy";
+            placeholder.disabled = true;
+            placeholder.selected = true;
+
+            privacy.appendChild(
+                placeholder
+            );
+
+            options.forEach(
                 function (option) {
 
                     const optionElement =
@@ -483,26 +599,43 @@
                     optionElement.value =
                         option;
 
-                    if (option === "PUBLIC_TO_EVERYONE") {
+                    if (
+                        option ===
+                        "PUBLIC_TO_EVERYONE"
+                    ) {
+
                         optionElement.textContent =
                             "Public";
-                    }
 
-                    else if (
-                        option === "MUTUAL_FOLLOW_FRIENDS"
+                    } else if (
+                        option ===
+                        "MUTUAL_FOLLOW_FRIENDS"
                     ) {
+
                         optionElement.textContent =
                             "Friends";
-                    }
 
-                    else if (option === "SELF_ONLY") {
+                    } else if (
+                        option ===
+                        "FOLLOWER_OF_CREATOR"
+                    ) {
+
+                        optionElement.textContent =
+                            "Followers";
+
+                    } else if (
+                        option ===
+                        "SELF_ONLY"
+                    ) {
+
                         optionElement.textContent =
                             "Only me";
-                    }
 
-                    else {
+                    } else {
+
                         optionElement.textContent =
                             option;
+
                     }
 
                     privacy.appendChild(
@@ -513,7 +646,7 @@
             );
 
 
-            if (data.comment_disabled) {
+            if (creator.comment_disabled) {
 
                 comments.checked = false;
                 comments.disabled = true;
@@ -525,7 +658,7 @@
             }
 
 
-            if (data.duet_disabled) {
+            if (creator.duet_disabled) {
 
                 duet.checked = false;
                 duet.disabled = true;
@@ -537,7 +670,7 @@
             }
 
 
-            if (data.stitch_disabled) {
+            if (creator.stitch_disabled) {
 
                 stitch.checked = false;
                 stitch.disabled = true;
@@ -547,6 +680,8 @@
                 stitch.disabled = false;
 
             }
+
+            updatePublishButton();
 
         } catch (error) {
 
@@ -560,12 +695,104 @@
     }
 
 
+    videoFile.addEventListener(
+        "change",
+        function () {
+
+            resetPublishStatus();
+
+            const file =
+                videoFile.files[0];
+
+            if (!file) {
+
+                selectedVideo = null;
+
+                videoPreview.innerHTML =
+                    "<div>" +
+                    "<strong>Video Preview</strong>" +
+                    "<p class='muted'>" +
+                    "Select an MP4 video to preview it before publishing." +
+                    "</p>" +
+                    "</div>";
+
+                updatePublishButton();
+
+                return;
+
+            }
+
+
+            if (
+                file.type !== "video/mp4" &&
+                !file.name.toLowerCase().endsWith(".mp4")
+            ) {
+
+                selectedVideo = null;
+
+                videoFile.value = "";
+
+                videoPreview.innerHTML =
+                    "<div>" +
+                    "<strong>Invalid file</strong>" +
+                    "<p class='muted'>" +
+                    "Only MP4 videos are accepted." +
+                    "</p>" +
+                    "</div>";
+
+                showPublishStatus(
+                    "Selecione um arquivo MP4.",
+                    "error"
+                );
+
+                updatePublishButton();
+
+                return;
+
+            }
+
+
+            selectedVideo = file;
+
+            const objectUrl =
+                URL.createObjectURL(file);
+
+            videoPreview.innerHTML = "";
+
+            const video =
+                document.createElement("video");
+
+            video.controls = true;
+            video.preload = "metadata";
+            video.src = objectUrl;
+
+            videoPreview.appendChild(
+                video
+            );
+
+            updatePublishButton();
+
+        }
+    );
+
+
+    privacy.addEventListener(
+        "change",
+        function () {
+
+            resetPublishStatus();
+            updatePublishButton();
+
+        }
+    );
+
+
     connectButton.addEventListener(
         "click",
         function () {
 
             window.location.href =
-                "https://nthits-api.onrender.com/oauth/login";
+                API_BASE + "/oauth/login";
 
         }
     );
@@ -573,11 +800,153 @@
 
     publishButton.addEventListener(
         "click",
-        function () {
+        async function () {
 
-            alert(
-                "Publishing will only start after explicit user consent."
+            if (!selectedVideo) {
+
+                showPublishStatus(
+                    "Selecione um vídeo MP4 antes de publicar.",
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            if (!privacy.value) {
+
+                showPublishStatus(
+                    "Selecione a privacidade do vídeo.",
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            const confirmed =
+                window.confirm(
+                    "Você confirma a publicação deste vídeo no TikTok?"
+                );
+
+            if (!confirmed) {
+                return;
+            }
+
+
+            publishButton.disabled = true;
+
+            showPublishStatus(
+                "Enviando vídeo para o TikTok. Aguarde...",
+                "success"
             );
+
+
+            const formData =
+                new FormData();
+
+            formData.append(
+                "video",
+                selectedVideo,
+                selectedVideo.name
+            );
+
+            formData.append(
+                "title",
+                document.getElementById(
+                    "title"
+                ).value.trim()
+            );
+
+            formData.append(
+                "privacy_level",
+                privacy.value
+            );
+
+            formData.append(
+                "disable_comment",
+                String(
+                    !comments.checked
+                )
+            );
+
+            formData.append(
+                "disable_duet",
+                String(
+                    !duet.checked
+                )
+            );
+
+            formData.append(
+                "disable_stitch",
+                String(
+                    !stitch.checked
+                )
+            );
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        API_BASE +
+                        "/publish-video",
+                        {
+                            method: "POST",
+                            body: formData
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.error ||
+                        "Falha ao publicar o vídeo."
+                    );
+
+                }
+
+
+                const publishId =
+                    data.publish_id ||
+                    "não informado";
+
+                showPublishStatus(
+                    "Vídeo enviado com sucesso. " +
+                    "Publish ID: " +
+                    publishId,
+                    "success"
+                );
+
+                console.log(
+                    "TikTok publish response:",
+                    data
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Publish error:",
+                    error
+                );
+
+                showPublishStatus(
+                    "Erro ao publicar: " +
+                    error.message,
+                    "error"
+                );
+
+            } finally {
+
+                updatePublishButton();
+
+            }
 
         }
     );
