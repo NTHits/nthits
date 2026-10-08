@@ -508,46 +508,31 @@
 
     const publishStatus =
         document.getElementById("publishStatus");
+
     const publishMode =
         document.getElementById("publishMode");
-    
+
     const scheduleFields =
         document.getElementById("scheduleFields");
-    
+
     const scheduleDate =
         document.getElementById("scheduleDate");
-    
+
     const scheduleTime =
         document.getElementById("scheduleTime");
-        
+
 
     let selectedVideo = null;
 
-    publishMode.addEventListener(
-        "change",
-        function () {
-    
-            if (publishMode.value === "schedule") {
-    
-                scheduleFields.style.display =
-                    "block";
-    
-            } else {
-    
-                scheduleFields.style.display =
-                    "none";
-    
-            }
-    
-            resetPublishStatus();
-    
-        }
-    );    
 
+    function showPublishStatus(
+        message,
+        type
+    ) {
 
-    function showPublishStatus(message, type) {
+        publishStatus.textContent =
+            message;
 
-        publishStatus.textContent = message;
         publishStatus.className =
             "status-message " + type;
 
@@ -557,6 +542,7 @@
     function resetPublishStatus() {
 
         publishStatus.textContent = "";
+
         publishStatus.className =
             "status-message";
 
@@ -572,18 +558,51 @@
     }
 
 
+    publishMode.addEventListener(
+        "change",
+        function () {
+
+            resetPublishStatus();
+
+            if (
+                publishMode.value ===
+                "schedule"
+            ) {
+
+                scheduleFields.style.display =
+                    "block";
+
+                showPublishStatus(
+                    "O agendamento ainda está sendo preparado. Por enquanto, use Publish now.",
+                    "success"
+                );
+
+            } else {
+
+                scheduleFields.style.display =
+                    "none";
+
+            }
+
+        }
+    );
+
+
     async function checkTikTokConnection() {
 
         try {
 
-            const response = await fetch(
-                API_BASE + "/status"
-            );
+            const response =
+                await fetch(
+                    API_BASE + "/status"
+                );
 
             if (!response.ok) {
+
                 throw new Error(
                     "Status request failed"
                 );
+
             }
 
             const data =
@@ -597,7 +616,10 @@
 
                 accountStatus.textContent =
                     "@" +
-                    data.creator_username +
+                    (
+                        data.creator_username ||
+                        ""
+                    ) +
                     " • TikTok connected";
 
                 await loadCreatorInfo();
@@ -620,50 +642,272 @@
             accountStatus.textContent =
                 "Unable to check TikTok connection.";
 
-            console.error(error);
+            console.error(
+                "TikTok connection error:",
+                error
+            );
 
         }
 
     }
 
 
-    async function pollPublishStatus(publishId) {
+    async function loadCreatorInfo() {
 
-        const maxAttempts = 30;
-        const intervalMs = 3000;
+        try {
 
-        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            const response =
+                await fetch(
+                    API_BASE + "/creator-info"
+                );
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Creator Info request failed"
+                );
+
+            }
+
+            const result =
+                await response.json();
+
+            const creator =
+                result.data ||
+                result;
+
+            const options =
+                creator.privacy_level_options ||
+                [];
+
+
+            privacy.innerHTML = "";
+
+
+            const placeholder =
+                document.createElement(
+                    "option"
+                );
+
+            placeholder.value = "";
+
+            placeholder.textContent =
+                "Select privacy";
+
+            placeholder.disabled =
+                true;
+
+            placeholder.selected =
+                true;
+
+
+            privacy.appendChild(
+                placeholder
+            );
+
+
+            options.forEach(
+                function (option) {
+
+                    const optionElement =
+                        document.createElement(
+                            "option"
+                        );
+
+                    optionElement.value =
+                        option;
+
+
+                    if (
+                        option ===
+                        "PUBLIC_TO_EVERYONE"
+                    ) {
+
+                        optionElement.textContent =
+                            "Public";
+
+                    } else if (
+                        option ===
+                        "MUTUAL_FOLLOW_FRIENDS"
+                    ) {
+
+                        optionElement.textContent =
+                            "Friends";
+
+                    } else if (
+                        option ===
+                        "FOLLOWER_OF_CREATOR"
+                    ) {
+
+                        optionElement.textContent =
+                            "Followers";
+
+                    } else if (
+                        option ===
+                        "SELF_ONLY"
+                    ) {
+
+                        optionElement.textContent =
+                            "Only me";
+
+                    } else {
+
+                        optionElement.textContent =
+                            option;
+
+                    }
+
+
+                    privacy.appendChild(
+                        optionElement
+                    );
+
+                }
+            );
+
+
+            if (
+                creator.comment_disabled
+            ) {
+
+                comments.checked =
+                    false;
+
+                comments.disabled =
+                    true;
+
+            } else {
+
+                comments.disabled =
+                    false;
+
+            }
+
+
+            if (
+                creator.duet_disabled
+            ) {
+
+                duet.checked =
+                    false;
+
+                duet.disabled =
+                    true;
+
+            } else {
+
+                duet.disabled =
+                    false;
+
+            }
+
+
+            if (
+                creator.stitch_disabled
+            ) {
+
+                stitch.checked =
+                    false;
+
+                stitch.disabled =
+                    true;
+
+            } else {
+
+                stitch.disabled =
+                    false;
+
+            }
+
+
+            updatePublishButton();
+
+
+        } catch (error) {
+
+            console.error(
+                "Unable to load Creator Info:",
+                error
+            );
+
+        }
+
+    }
+
+
+    async function pollPublishStatus(
+        publishId
+    ) {
+
+        const maxAttempts =
+            30;
+
+        const intervalMs =
+            3000;
+
+
+        for (
+            let attempt = 1;
+            attempt <= maxAttempts;
+            attempt++
+        ) {
 
             try {
 
-                const response = await fetch(
-                    API_BASE + "/video-status",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            publish_id: publishId
-                        })
-                    }
-                );
+                const response =
+                    await fetch(
+                        API_BASE +
+                        "/video-status",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+                            body:
+                                JSON.stringify({
+                                    publish_id:
+                                        publishId
+                                })
+                        }
+                    );
 
-                const data = await response.json();
+
+                const data =
+                    await response.json();
+
 
                 if (!response.ok) {
+
                     throw new Error(
                         data.error ||
                         "Falha ao consultar o status da publicação."
                     );
+
                 }
 
-                const tiktok = data.tiktok || {};
-                const tiktokData = tiktok.data || {};
-                const status = tiktokData.status || "UNKNOWN";
-                const failReason = tiktokData.fail_reason || "";
+
+                const tiktok =
+                    data.tiktok ||
+                    {};
+
+                const tiktokData =
+                    tiktok.data ||
+                    {};
+
+                const status =
+                    tiktokData.status ||
+                    "UNKNOWN";
+
+                const failReason =
+                    tiktokData.fail_reason ||
+                    "";
+
+
                 const publicPostIds =
-                    tiktokData.publicaly_available_post_id || [];
+                    tiktokData.publicaly_available_post_id ||
+                    [];
+
 
                 console.log(
                     "TikTok publish status:",
@@ -671,62 +915,90 @@
                     tiktokData
                 );
 
-                if (status === "PUBLISH_COMPLETE") {
+
+                if (
+                    status ===
+                    "PUBLISH_COMPLETE"
+                ) {
 
                     let message =
-                        "Publicação concluída pelo TikTok. Publish ID: " +
-                        publishId;
+                        "Publicação concluída pelo TikTok.";
 
-                    if (publicPostIds.length > 0) {
+                    if (
+                        publicPostIds.length >
+                        0
+                    ) {
+
                         message +=
                             " Post ID público: " +
                             publicPostIds[0];
+
                     }
+
 
                     showPublishStatus(
                         message,
                         "success"
                     );
 
+
                     return;
 
                 }
 
-                if (status === "FAILED") {
+
+                if (
+                    status ===
+                    "FAILED"
+                ) {
 
                     showPublishStatus(
                         "O TikTok recusou ou não conseguiu concluir a publicação. " +
-                        (failReason
-                            ? "Motivo: " + failReason
-                            : "Consulte o console para mais detalhes."),
+                        (
+                            failReason
+                                ? "Motivo: " +
+                                  failReason
+                                : ""
+                        ),
                         "error"
                     );
+
 
                     return;
 
                 }
 
-                const progress =
+
+                showPublishStatus(
                     "Status TikTok: " +
                     status +
-                    " (verificação " +
+                    " (" +
                     attempt +
                     "/" +
                     maxAttempts +
-                    ")";
-
-                showPublishStatus(
-                    progress,
+                    ")",
                     "success"
                 );
 
-                if (attempt < maxAttempts) {
+
+                if (
+                    attempt <
+                    maxAttempts
+                ) {
+
                     await new Promise(
                         function (resolve) {
-                            setTimeout(resolve, intervalMs);
+
+                            setTimeout(
+                                resolve,
+                                intervalMs
+                            );
+
                         }
                     );
+
                 }
+
 
             } catch (error) {
 
@@ -735,11 +1007,13 @@
                     error
                 );
 
+
                 showPublishStatus(
                     "O vídeo foi enviado, mas não foi possível consultar o status: " +
                     error.message,
                     "error"
                 );
+
 
                 return;
 
@@ -747,157 +1021,13 @@
 
         }
 
+
         showPublishStatus(
             "O TikTok ainda está processando o vídeo. Publish ID: " +
-            publishId +
-            ". Você pode consultar novamente pelo console.",
+            publishId,
             "success"
         );
 
-    }
-
-
-    async function loadCreatorInfo() {
-    
-        try {
-    
-            const response = await fetch(
-                API_BASE + "/status"
-            );
-    
-            if (!response.ok) {
-                throw new Error(
-                    "Status request failed"
-                );
-            }
-    
-            const creator =
-                await response.json();
-    
-            const options =
-                creator.privacy_level_options || [];
-    
-            privacy.innerHTML = "";
-    
-            const placeholder =
-                document.createElement("option");
-    
-            placeholder.value = "";
-            placeholder.textContent =
-                "Select privacy";
-            placeholder.disabled = true;
-            placeholder.selected = true;
-    
-            privacy.appendChild(
-                placeholder
-            );
-    
-    
-            options.forEach(
-                function (option) {
-    
-                    const optionElement =
-                        document.createElement("option");
-    
-                    optionElement.value =
-                        option;
-    
-    
-                    if (
-                        option ===
-                        "PUBLIC_TO_EVERYONE"
-                    ) {
-    
-                        optionElement.textContent =
-                            "Public";
-    
-                    } else if (
-                        option ===
-                        "MUTUAL_FOLLOW_FRIENDS"
-                    ) {
-    
-                        optionElement.textContent =
-                            "Friends";
-    
-                    } else if (
-                        option ===
-                        "FOLLOWER_OF_CREATOR"
-                    ) {
-    
-                        optionElement.textContent =
-                            "Followers";
-    
-                    } else if (
-                        option ===
-                        "SELF_ONLY"
-                    ) {
-    
-                        optionElement.textContent =
-                            "Only me";
-    
-                    } else {
-    
-                        optionElement.textContent =
-                            option;
-    
-                    }
-    
-    
-                    privacy.appendChild(
-                        optionElement
-                    );
-    
-                }
-            );
-    
-    
-            if (creator.comment_disabled) {
-    
-                comments.checked = false;
-                comments.disabled = true;
-    
-            } else {
-    
-                comments.disabled = false;
-    
-            }
-    
-    
-            if (creator.duet_disabled) {
-    
-                duet.checked = false;
-                duet.disabled = true;
-    
-            } else {
-    
-                duet.disabled = false;
-    
-            }
-    
-    
-            if (creator.stitch_disabled) {
-    
-                stitch.checked = false;
-                stitch.disabled = true;
-    
-            } else {
-    
-                stitch.disabled = false;
-    
-            }
-    
-    
-            updatePublishButton();
-    
-        } catch (error) {
-    
-            console.error(
-                "Unable to load Creator Info:",
-                error
-            );
-    
-        }
-    
     }
 
 
@@ -907,12 +1037,16 @@
 
             resetPublishStatus();
 
+
             const file =
                 videoFile.files[0];
 
+
             if (!file) {
 
-                selectedVideo = null;
+                selectedVideo =
+                    null;
+
 
                 videoPreview.innerHTML =
                     "<div>" +
@@ -922,6 +1056,7 @@
                     "</p>" +
                     "</div>";
 
+
                 updatePublishButton();
 
                 return;
@@ -930,13 +1065,19 @@
 
 
             if (
-                file.type !== "video/mp4" &&
-                !file.name.toLowerCase().endsWith(".mp4")
+                file.type !==
+                    "video/mp4" &&
+                !file.name
+                    .toLowerCase()
+                    .endsWith(".mp4")
             ) {
 
-                selectedVideo = null;
+                selectedVideo =
+                    null;
 
-                videoFile.value = "";
+                videoFile.value =
+                    "";
+
 
                 videoPreview.innerHTML =
                     "<div>" +
@@ -946,10 +1087,12 @@
                     "</p>" +
                     "</div>";
 
+
                 showPublishStatus(
                     "Selecione um arquivo MP4.",
                     "error"
                 );
+
 
                 updatePublishButton();
 
@@ -958,23 +1101,40 @@
             }
 
 
-            selectedVideo = file;
+            selectedVideo =
+                file;
+
 
             const objectUrl =
-                URL.createObjectURL(file);
+                URL.createObjectURL(
+                    file
+                );
 
-            videoPreview.innerHTML = "";
+
+            videoPreview.innerHTML =
+                "";
+
 
             const video =
-                document.createElement("video");
+                document.createElement(
+                    "video"
+                );
 
-            video.controls = true;
-            video.preload = "metadata";
-            video.src = objectUrl;
+
+            video.controls =
+                true;
+
+            video.preload =
+                "metadata";
+
+            video.src =
+                objectUrl;
+
 
             videoPreview.appendChild(
                 video
             );
+
 
             updatePublishButton();
 
@@ -987,6 +1147,7 @@
         function () {
 
             resetPublishStatus();
+
             updatePublishButton();
 
         }
@@ -998,7 +1159,8 @@
         function () {
 
             window.location.href =
-                API_BASE + "/oauth/login";
+                API_BASE +
+                "/oauth/login";
 
         }
     );
@@ -1030,36 +1192,39 @@
                 return;
 
             }
-            
-            if (publishMode.value === "schedule") {
-            
-                if (
-                    !scheduleDate.value ||
-                    !scheduleTime.value
-                ) {
-            
-                    showPublishStatus(
-                        "Selecione a data e o horário do agendamento.",
-                        "error"
-                    );
-            
-                    return;
-            
-                }
-            
-            }            
+
+
+            if (
+                publishMode.value ===
+                "schedule"
+            ) {
+
+                showPublishStatus(
+                    "O agendamento ainda não está disponível. Selecione Publish now.",
+                    "error"
+                );
+
+                return;
+
+            }
+
 
             const confirmed =
                 window.confirm(
                     "Você confirma a publicação deste vídeo no TikTok?"
                 );
 
+
             if (!confirmed) {
+
                 return;
+
             }
 
 
-            publishButton.disabled = true;
+            publishButton.disabled =
+                true;
+
 
             showPublishStatus(
                 "Enviando vídeo para o TikTok. Aguarde...",
@@ -1070,23 +1235,30 @@
             const formData =
                 new FormData();
 
+
             formData.append(
                 "video",
                 selectedVideo,
                 selectedVideo.name
             );
 
+
             formData.append(
                 "title",
-                document.getElementById(
-                    "title"
-                ).value.trim()
+                document
+                    .getElementById(
+                        "title"
+                    )
+                    .value
+                    .trim()
             );
+
 
             formData.append(
                 "privacy_level",
                 privacy.value
             );
+
 
             formData.append(
                 "disable_comment",
@@ -1095,12 +1267,14 @@
                 )
             );
 
+
             formData.append(
                 "disable_duet",
                 String(
                     !duet.checked
                 )
             );
+
 
             formData.append(
                 "disable_stitch",
@@ -1122,8 +1296,10 @@
                         }
                     );
 
+
                 const data =
                     await response.json();
+
 
                 if (!response.ok) {
 
@@ -1135,21 +1311,34 @@
                 }
 
 
+                console.log(
+                    "TikTok publish response:",
+                    data
+                );
+
+
                 const publishId =
-                    data.publish_id ||
-                    "não informado";
+                    data.publish_id;
+
+
+                if (!publishId) {
+
+                    throw new Error(
+                        "O TikTok não retornou um publish_id."
+                    );
+
+                }
+
 
                 showPublishStatus(
                     "Vídeo enviado. Aguardando confirmação do TikTok...",
                     "success"
                 );
 
-                console.log(
-                    "TikTok publish response:",
-                    data
-                );
 
-                await pollPublishStatus(publishId);
+                await pollPublishStatus(
+                    publishId
+                );
 
 
             } catch (error) {
@@ -1158,6 +1347,7 @@
                     "Publish error:",
                     error
                 );
+
 
                 showPublishStatus(
                     "Erro ao publicar: " +
