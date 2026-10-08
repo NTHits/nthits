@@ -508,8 +508,41 @@
 
     const publishStatus =
         document.getElementById("publishStatus");
+    const publishMode =
+        document.getElementById("publishMode");
+    
+    const scheduleFields =
+        document.getElementById("scheduleFields");
+    
+    const scheduleDate =
+        document.getElementById("scheduleDate");
+    
+    const scheduleTime =
+        document.getElementById("scheduleTime");
+        
 
     let selectedVideo = null;
+
+    publishMode.addEventListener(
+        "change",
+        function () {
+    
+            if (publishMode.value === "schedule") {
+    
+                scheduleFields.style.display =
+                    "block";
+    
+            } else {
+    
+                scheduleFields.style.display =
+                    "none";
+    
+            }
+    
+            resetPublishStatus();
+    
+        }
+    );    
 
 
     function showPublishStatus(message, type) {
@@ -997,7 +1030,24 @@
                 return;
 
             }
-
+            
+            if (publishMode.value === "schedule") {
+            
+                if (
+                    !scheduleDate.value ||
+                    !scheduleTime.value
+                ) {
+            
+                    showPublishStatus(
+                        "Selecione a data e o horário do agendamento.",
+                        "error"
+                    );
+            
+                    return;
+            
+                }
+            
+            }            
 
             const confirmed =
                 window.confirm(
