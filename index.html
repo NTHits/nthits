@@ -654,22 +654,27 @@
 
 
 
+
 async function loadCreatorInfo() {
-    const privacySelect = document.getElementById("privacyLevel");
+    const privacySelect = document.getElementById("privacy");
 
     if (!privacySelect) {
-        console.error('Elemento #privacyLevel não encontrado.');
+        console.error('Elemento #privacy não encontrado.');
         return;
     }
 
-    privacySelect.innerHTML = '<option value="">Carregando privacidade...</option>';
+    privacySelect.innerHTML =
+        '<option value="">Carregando privacidade...</option>';
     privacySelect.disabled = true;
 
     try {
-        const response = await fetch(`${API_BASE}/status?t=${Date.now()}`, {
-            method: "GET",
-            cache: "no-store"
-        });
+        const response = await fetch(
+            `${API_BASE}/status?t=${Date.now()}`,
+            {
+                method: "GET",
+                cache: "no-store"
+            }
+        );
 
         const result = await response.json();
 
@@ -681,14 +686,16 @@ async function loadCreatorInfo() {
 
         if (!result.connected) {
             throw new Error(
-                result.error || "TikTok desconectado. Conecte novamente."
+                result.error || "TikTok desconectado."
             );
         }
 
         const options = result.privacy_level_options;
 
         if (!Array.isArray(options) || options.length === 0) {
-            throw new Error("O TikTok não retornou opções de privacidade.");
+            throw new Error(
+                "O TikTok não retornou opções de privacidade."
+            );
         }
 
         const labels = {
@@ -713,17 +720,25 @@ async function loadCreatorInfo() {
 
         privacySelect.disabled = false;
 
+        updatePublishButton();
+
         console.log("Privacidades carregadas:", options);
 
     } catch (error) {
-        console.error("Falha ao carregar opções de privacidade:", error);
+        console.error(
+            "Falha ao carregar opções de privacidade:",
+            error
+        );
 
         privacySelect.innerHTML =
-            '<option value="">Falha ao carregar privacidade</option>';
+            '<option value="">Erro ao carregar privacidade</option>';
 
         privacySelect.disabled = false;
+
+        updatePublishButton();
     }
 }
+
 
     async function pollPublishStatus(
         publishId
