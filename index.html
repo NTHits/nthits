@@ -552,37 +552,158 @@
     }
 
 
+    async function pollPublishStatus(publishId) {
+
+        const maxAttempts = 30;
+        const intervalMs = 3000;
+
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+
+            try {
+
+                const response = await fetch(
+                    API_BASE + "/video-status",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            publish_id: publishId
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.error ||
+                        "Falha ao consultar o status da publicação."
+                    );
+                }
+
+                const tiktok = data.tiktok || {};
+                const tiktokData = tiktok.data || {};
+                const status = tiktokData.status || "UNKNOWN";
+                const failReason = tiktokData.fail_reason || "";
+                const publicPostIds =
+                    tiktokData.publicaly_available_post_id || [];
+
+                console.log(
+                    "TikTok publish status:",
+                    status,
+                    tiktokData
+                );
+
+                if (status === "PUBLISH_COMPLETE") {
+
+                    let message =
+                        "Publicação concluída pelo TikTok. Publish ID: " +
+                        publishId;
+
+                    if (publicPostIds.length > 0) {
+                        message +=
+                            " Post ID público: " +
+                            publicPostIds[0];
+                    }
+
+                    showPublishStatus(
+                        message,
+                        "success"
+                    );
+
+                    return;
+
+                }
+
+                if (status === "FAILED") {
+
+                    showPublishStatus(
+                        "O TikTok recusou ou não conseguiu concluir a publicação. " +
+                        (failReason
+                            ? "Motivo: " + failReason
+                            : "Consulte o console para mais detalhes."),
+                        "error"
+                    );
+
+                    return;
+
+                }
+
+                const progress =
+                    "Status TikTok: " +
+                    status +
+                    " (verificação " +
+                    attempt +
+                    "/" +
+                    maxAttempts +
+                    ")";
+
+                showPublishStatus(
+                    progress,
+                    "success"
+                );
+
+                if (attempt < maxAttempts) {
+                    await new Promise(
+                        function (resolve) {
+                            setTimeout(resolve, intervalMs);
+                        }
+                    );
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "Publish status error:",
+                    error
+                );
+
+                showPublishStatus(
+                    "O vídeo foi enviado, mas não foi possível consultar o status: " +
+                    error.message,
+                    "error"
+                );
+
+                return;
+
+            }
+
+        }
+
+        showPublishStatus(
+            "O TikTok ainda está processando o vídeo. Publish ID: " +
+            publishId +
+            ". Você pode consultar novamente pelo console.",
+            "success"
+        );
+
+    }
+
+
     async function loadCreatorInfo() {
 
         try {
 
-            /*
-             * Use /status here instead of /creator-info.
-             *
-             * /status already returns the live TikTok Creator Info data
-             * together with privacy_level_options. This keeps the website
-             * synchronized with the same endpoint that confirms the account
-             * connection.
-             */
             const response = await fetch(
-                API_BASE + "/status"
+                API_BASE + "/creator-info"
             );
 
             if (!response.ok) {
                 throw new Error(
-                    "Status request failed"
+                    "Creator Info request failed"
                 );
             }
 
-            const creator =
+            const data =
                 await response.json();
 
+            const creator =
+                data.data || data;
+
             const options =
-                Array.isArray(
-                    creator.privacy_level_options
-                )
-                    ? creator.privacy_level_options
-                    : [];
+                creator.privacy_level_options || [];
 
             privacy.innerHTML = "";
 
@@ -654,21 +775,6 @@
                 }
             );
 
-            if (options.length === 0) {
-
-                const unavailable =
-                    document.createElement("option");
-
-                unavailable.value = "";
-                unavailable.textContent =
-                    "No privacy options available";
-                unavailable.disabled = true;
-
-                privacy.appendChild(
-                    unavailable
-                );
-
-            }
 
             if (creator.comment_disabled) {
 
@@ -713,23 +819,6 @@
                 "Unable to load Creator Info:",
                 error
             );
-
-            privacy.innerHTML = "";
-
-            const errorOption =
-                document.createElement("option");
-
-            errorOption.value = "";
-            errorOption.textContent =
-                "Unable to load privacy options";
-            errorOption.disabled = true;
-            errorOption.selected = true;
-
-            privacy.appendChild(
-                errorOption
-            );
-
-            updatePublishButton();
 
         }
 
@@ -958,9 +1047,7 @@
                     "não informado";
 
                 showPublishStatus(
-                    "Vídeo enviado com sucesso. " +
-                    "Publish ID: " +
-                    publishId,
+                    "Vídeo enviado. Aguardando confirmação do TikTok...",
                     "success"
                 );
 
@@ -968,6 +1055,8 @@
                     "TikTok publish response:",
                     data
                 );
+
+                await pollPublishStatus(publishId);
 
 
             } catch (error) {
