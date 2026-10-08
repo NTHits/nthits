@@ -653,32 +653,52 @@
 
 
 
+
 async function loadCreatorInfo() {
     const privacySelect = document.getElementById("privacyLevel");
 
+    if (!privacySelect) {
+        console.error('Elemento #privacyLevel não encontrado.');
+        return;
+    }
+
+    privacySelect.innerHTML = '<option value="">Carregando privacidade...</option>';
+    privacySelect.disabled = true;
+
     try {
-        const response = await fetch(`${API_BASE}/status`, {
+        const response = await fetch(`${API_BASE}/status?t=${Date.now()}`, {
             method: "GET",
             cache: "no-store"
         });
 
         const result = await response.json();
 
-        if (!response.ok || !result.connected) {
+        if (!response.ok) {
             throw new Error(
-                result.error || "Não foi possível consultar a conta TikTok."
+                result.error || `Erro HTTP ${response.status}`
             );
         }
 
-        const options = result.privacy_level_options || [];
+        if (!result.connected) {
+            throw new Error(
+                result.error || "TikTok desconectado. Conecte novamente."
+            );
+        }
+
+        const options = result.privacy_level_options;
+
+        if (!Array.isArray(options) || options.length === 0) {
+            throw new Error("O TikTok não retornou opções de privacidade.");
+        }
 
         const labels = {
             PUBLIC_TO_EVERYONE: "Everyone",
+            FOLLOWER_OF_CREATOR: "Followers",
             MUTUAL_FOLLOW_FRIENDS: "Friends",
             SELF_ONLY: "Only me"
         };
 
-        privacySelect.innerHTML = "";
+        privacySelect.replaceChildren();
 
         options.forEach((value) => {
             const option = document.createElement("option");
@@ -687,22 +707,23 @@ async function loadCreatorInfo() {
             privacySelect.appendChild(option);
         });
 
-        if (options.includes("SELF_ONLY")) {
-            privacySelect.value = "SELF_ONLY";
-        }
+        privacySelect.value = options.includes("SELF_ONLY")
+            ? "SELF_ONLY"
+            : options[0];
 
-        if (options.length === 0) {
-            privacySelect.innerHTML =
-                '<option value="">Nenhuma opção de privacidade disponível</option>';
-        }
+        privacySelect.disabled = false;
+
+        console.log("Privacidades carregadas:", options);
+
     } catch (error) {
-        console.error("Erro ao carregar privacidade:", error);
+        console.error("Falha ao carregar opções de privacidade:", error);
 
         privacySelect.innerHTML =
-            '<option value="">Erro ao carregar opções de privacidade</option>';
+            '<option value="">Falha ao carregar privacidade</option>';
+
+        privacySelect.disabled = false;
     }
 }
-
 
     async function pollPublishStatus(
         publishId
