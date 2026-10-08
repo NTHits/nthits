@@ -556,32 +556,33 @@
 
         try {
 
+            /*
+             * Use /status here instead of /creator-info.
+             *
+             * /status already returns the live TikTok Creator Info data
+             * together with privacy_level_options. This keeps the website
+             * synchronized with the same endpoint that confirms the account
+             * connection.
+             */
             const response = await fetch(
-                API_BASE + "/creator-info"
+                API_BASE + "/status"
             );
 
             if (!response.ok) {
                 throw new Error(
-                    "Creator Info request failed"
+                    "Status request failed"
                 );
             }
 
-            const data =
+            const creator =
                 await response.json();
 
-            const creator =
-                data.data || data;
-
-            let options =
-                Array.isArray(creator.privacy_level_options)
-                    ? [...creator.privacy_level_options]
+            const options =
+                Array.isArray(
+                    creator.privacy_level_options
+                )
+                    ? creator.privacy_level_options
                     : [];
-
-            // SELF_ONLY is supported by TikTok for the connected private
-            // account. Keep it available even if an older API response omits it.
-            if (!options.includes("SELF_ONLY")) {
-                options.push("SELF_ONLY");
-            }
 
             privacy.innerHTML = "";
 
@@ -653,6 +654,21 @@
                 }
             );
 
+            if (options.length === 0) {
+
+                const unavailable =
+                    document.createElement("option");
+
+                unavailable.value = "";
+                unavailable.textContent =
+                    "No privacy options available";
+                unavailable.disabled = true;
+
+                privacy.appendChild(
+                    unavailable
+                );
+
+            }
 
             if (creator.comment_disabled) {
 
@@ -697,6 +713,23 @@
                 "Unable to load Creator Info:",
                 error
             );
+
+            privacy.innerHTML = "";
+
+            const errorOption =
+                document.createElement("option");
+
+            errorOption.value = "";
+            errorOption.textContent =
+                "Unable to load privacy options";
+            errorOption.disabled = true;
+            errorOption.selected = true;
+
+            privacy.appendChild(
+                errorOption
+            );
+
+            updatePublishButton();
 
         }
 
