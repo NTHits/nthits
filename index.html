@@ -379,7 +379,49 @@
                     Music Usage Confirmation.
 
                 </div>
-
+                
+                <div class="schedule-section">
+                
+                    <label>
+                        Publication
+                
+                        <select id="publishMode">
+                
+                            <option value="now" selected>
+                                Publish now
+                            </option>
+                
+                            <option value="schedule">
+                                Schedule
+                            </option>
+                
+                        </select>
+                
+                    </label>
+                
+                
+                    <div id="scheduleFields" style="display: none;">
+                
+                        <label>
+                            Date
+                
+                            <input
+                                type="date"
+                                id="scheduleDate">
+                        </label>
+                
+                
+                        <label>
+                            Time
+                
+                            <input
+                                type="time"
+                                id="scheduleTime">
+                        </label>
+                
+                    </div>
+                
+                </div>
 
                 <button
                     class="button"
